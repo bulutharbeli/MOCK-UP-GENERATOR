@@ -1,3 +1,4 @@
+
 import type { ProductCategory } from './types';
 
 export const PRODUCT_CATEGORIES: ProductCategory[] = [
@@ -105,6 +106,13 @@ export const PRODUCT_CATEGORIES: ProductCategory[] = [
             imageUrl: 'https://picsum.photos/seed/hat-beanie-black/300/300',
             prompt: 'A product shot of a black beanie, folded neatly on a wooden table, with the provided logo on a small patch on the cuff.',
             attributes: { color: 'black', style: 'Beanie' },
+        },
+        {
+            id: 'hat-beanie-white',
+            name: 'White Beanie',
+            imageUrl: 'https://picsum.photos/seed/hat-beanie-white/300/300',
+            prompt: 'A product shot of a white beanie, folded neatly on a light-colored surface, with the provided logo on a small patch on the cuff.',
+            attributes: { color: 'white', style: 'Beanie' },
         },
     ]
   },
@@ -323,6 +331,29 @@ export const PRODUCT_CATEGORIES: ProductCategory[] = [
         prompt: 'An elegant mockup of a business card on thick, textured white cotton paper with smooth, rounded corners. The provided logo is embossed, creating a raised, tactile effect. The lighting is soft, highlighting the texture and shadow of the emboss.',
         attributes: { style: 'Rounded', finish: 'Embossed' },
       },
+    ]
+  },
+  {
+    id: 'golf-ball',
+    name: 'Golf Ball',
+    attributes: [
+        { key: 'style', name: 'Style' },
+    ],
+    variants: [
+      {
+        id: 'golfball-standard',
+        name: 'Standard White',
+        imageUrl: 'https://picsum.photos/seed/golfball-white/300/300',
+        prompt: 'A high-quality, professional studio photograph of a clean, white golf ball on a pristine green background, simulating a putting green. The provided logo is printed clearly and sharply on the side of the ball.',
+        attributes: { style: 'Standard' },
+      },
+      {
+        id: 'golfball-yellow',
+        name: 'Yellow',
+        imageUrl: 'https://picsum.photos/seed/golfball-yellow/300/300',
+        prompt: 'A high-quality, professional studio photograph of a bright yellow golf ball on a pristine green background, simulating a putting green. The provided logo is printed clearly and sharply in black on the side of the ball.',
+        attributes: { style: 'Yellow' },
+      }
     ]
   },
 ];

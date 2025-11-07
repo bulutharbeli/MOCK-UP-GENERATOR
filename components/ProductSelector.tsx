@@ -17,24 +17,27 @@ export const ProductSelector: React.FC<ProductSelectorProps> = ({
 }) => {
     const [activeFilters, setActiveFilters] = useState<Record<string, string>>({});
 
-    // Reset filters when category changes
+    // Reset filters and variant when category changes
     useEffect(() => {
         setActiveFilters({});
-    }, [selectedCategory]);
+        onSelectVariant(null);
+    }, [selectedCategory, onSelectVariant]);
 
-    const handleFilterChange = (key: string, value: string) => {
-        setActiveFilters(prev => {
-            const newFilters = { ...prev };
-            if (newFilters[key] === value) {
-                delete newFilters[key]; // Toggle off
+    // Simplified click handler: just toggle the filter for the clicked attribute
+    const handleOptionClick = (attrKey: string, optionValue: string) => {
+        setActiveFilters(currentFilters => {
+            const newFilters = { ...currentFilters };
+            // If clicking the currently active filter, deactivate it. Otherwise, activate it.
+            if (currentFilters[attrKey] === optionValue) {
+                delete newFilters[attrKey];
             } else {
-                newFilters[key] = value;
+                newFilters[attrKey] = optionValue;
             }
             return newFilters;
         });
-        onSelectVariant(null); // Deselect variant when filters change
     };
 
+    // Memoize the calculation of filtered variants based on active filters
     const filteredVariants = useMemo(() => {
         if (!selectedCategory) return [];
         return selectedCategory.variants.filter(variant => {
@@ -43,6 +46,15 @@ export const ProductSelector: React.FC<ProductSelectorProps> = ({
             });
         });
     }, [selectedCategory, activeFilters]);
+
+    // Auto-select the variant if filters result in a single unambiguous choice
+    useEffect(() => {
+        if (filteredVariants.length === 1) {
+            onSelectVariant(filteredVariants[0]);
+        } else {
+            onSelectVariant(null);
+        }
+    }, [filteredVariants, onSelectVariant]);
 
     return (
         <div className="flex flex-col gap-6">
@@ -70,42 +82,55 @@ export const ProductSelector: React.FC<ProductSelectorProps> = ({
 
             {/* Attribute Filters */}
             {selectedCategory && selectedCategory.attributes.map(attr => {
-                 const otherFilters = { ...activeFilters };
-                 delete otherFilters[attr.key];
+                const allOptionsForAttr = [...new Set(selectedCategory.variants.map(v => v.attributes[attr.key]))].filter(Boolean) as string[];
 
-                 const relevantVariants = selectedCategory.variants.filter(variant => {
-                     return Object.entries(otherFilters).every(([key, value]) => {
-                        return variant.attributes[key] === value;
-                     });
-                 });
-                 
-                 const options = [...new Set(relevantVariants.map(v => v.attributes[attr.key]))].filter(Boolean) as string[];
-                 
-                 if (options.length <= 1 && !activeFilters[attr.key]) return null;
-                 
-                 return (
-                     <div key={attr.key}>
-                         <h3 className="text-lg font-semibold mb-3 text-gray-300">{attr.name}</h3>
-                         <div className="flex flex-wrap gap-3">
-                             {options.map(option => (
-                                 <button
-                                     key={option}
-                                     onClick={() => handleFilterChange(attr.key, option)}
-                                     className={`
-                                         px-4 py-2 border-2 rounded-lg font-semibold transition-all duration-200 capitalize
-                                         ${activeFilters[attr.key] === option
-                                             ? 'bg-brand-secondary border-brand-secondary text-white'
-                                             : 'bg-base-200 border-base-300 text-base-content hover:border-brand-primary'
-                                         }
-                                     `}
-                                 >
-                                     {option}
-                                 </button>
-                             ))}
-                         </div>
-                     </div>
-                 )
+                if (allOptionsForAttr.length === 0) return null;
+
+                return (
+                    <div key={attr.key}>
+                        <h3 className="text-lg font-semibold mb-3 text-gray-300">{attr.name}</h3>
+                        <div className="flex flex-wrap gap-3">
+                            {allOptionsForAttr.map(option => {
+                                // Determine if this option is compatible with the *other* active filters.
+                                const otherFilters = { ...activeFilters };
+                                delete otherFilters[attr.key];
+
+                                const isEnabled = selectedCategory.variants.some(variant => {
+                                    if (variant.attributes[attr.key] !== option) {
+                                        return false; // Must match the current option
+                                    }
+                                    // And must also match all other active filters
+                                    return Object.entries(otherFilters).every(([key, value]) => {
+                                        return variant.attributes[key] === value;
+                                    });
+                                });
+
+                                return (
+                                    <button
+                                        key={option}
+                                        onClick={() => handleOptionClick(attr.key, option)}
+                                        disabled={!isEnabled}
+                                        className={`
+                                            px-4 py-2 border-2 rounded-lg font-semibold transition-all duration-200 capitalize
+                                            ${activeFilters[attr.key] === option
+                                                ? 'bg-brand-secondary border-brand-secondary text-white'
+                                                : 'bg-base-200 border-base-300 text-base-content'
+                                            }
+                                            ${isEnabled
+                                                ? 'hover:border-brand-primary'
+                                                : 'opacity-40 cursor-not-allowed'
+                                            }
+                                        `}
+                                    >
+                                        {option}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+                );
             })}
+
 
             {/* Variant Selector */}
             {selectedCategory && (
@@ -137,7 +162,7 @@ export const ProductSelector: React.FC<ProductSelectorProps> = ({
                             </div>
                         ))}
                     </div>
-                     {filteredVariants.length === 0 && (
+                     {filteredVariants.length === 0 && Object.keys(activeFilters).length > 0 && (
                         <div className="text-center py-8 text-gray-500">
                             <p>No products match the selected filters.</p>
                             <p className="text-sm">Try changing your selection.</p>
