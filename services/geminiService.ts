@@ -1,4 +1,3 @@
-
 import { GoogleGenAI, Modality } from "@google/genai";
 
 const API_KEY = process.env.API_KEY;
@@ -21,20 +20,31 @@ const getBase64FromResponse = (response: any): string => {
 };
 
 
-export const generateMockup = async (logoBase64: string, logoMimeType: string, productPrompt: string): Promise<string> => {
+export const generateMockup = async (logoBase64: string, logoMimeType: string, productPrompt: string, customImage?: { base64: string, mimeType: string }): Promise<string> => {
     try {
+        const parts: any[] = [{ text: productPrompt }];
+
+        // The model seems to work best if the 'main' image comes first, then the logo to place on it.
+        if (customImage) {
+            parts.push({
+                inlineData: {
+                    data: customImage.base64,
+                    mimeType: customImage.mimeType,
+                },
+            });
+        }
+
+        parts.push({
+            inlineData: {
+                data: logoBase64,
+                mimeType: logoMimeType,
+            },
+        });
+
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash-image',
             contents: {
-                parts: [
-                    { text: productPrompt },
-                    {
-                        inlineData: {
-                            data: logoBase64,
-                            mimeType: logoMimeType,
-                        },
-                    },
-                ],
+                parts,
             },
             config: {
                 responseModalities: [Modality.IMAGE],
