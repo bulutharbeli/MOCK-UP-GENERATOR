@@ -22,6 +22,8 @@ const App: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [editPrompt, setEditPrompt] = useState<string>('');
     const [aspectRatio, setAspectRatio] = useState<string>('1:1');
+    const [generationPrompt, setGenerationPrompt] = useState<string>('');
+
 
     // State for client-side image edits
     const [imageFilters, setImageFilters] = useState<ImageFilters>({ brightness: 100, contrast: 100, saturation: 100 });
@@ -97,7 +99,11 @@ const App: React.FC = () => {
                         aspectRatioDescription = 'The final image must be a square photograph with a 1:1 aspect ratio.';
                         break;
                 }
-                prompt = `${selectedVariant.prompt}. ${aspectRatioDescription} This is a strict requirement.`;
+                prompt = `${selectedVariant.prompt}. ${aspectRatioDescription}`;
+                if (generationPrompt) {
+                    prompt += ` Additional user instructions: ${generationPrompt}.`;
+                }
+                prompt += ` The aspect ratio requirement is strict.`;
             } else {
                 setError('An unexpected error occurred. Please try again.');
                 setIsLoading(false);
@@ -112,7 +118,7 @@ const App: React.FC = () => {
         } finally {
             setIsLoading(false);
         }
-    }, [logo, selectedVariant, customImage, customPrompt, aspectRatio, resetImageEdits]);
+    }, [logo, selectedVariant, customImage, customPrompt, aspectRatio, generationPrompt, resetImageEdits]);
 
     const handleEditImage = useCallback(async () => {
         if (!mockupImage || !editPrompt) {
@@ -198,12 +204,29 @@ const App: React.FC = () => {
                         </div>
                         <div className="bg-base-200 rounded-lg p-6 shadow-lg">
                              <h2 className="text-2xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-brand-primary to-brand-secondary">3. Generate Mockup</h2>
-                             <div className="mb-6">
-                                <AspectRatioSelector
-                                    selectedAspectRatio={aspectRatio}
-                                    onSelectAspectRatio={setAspectRatio}
-                                />
-                            </div>
+                             <div className={customImage ? 'opacity-50 pointer-events-none' : 'transition-opacity'}>
+                                <div className="mb-6">
+                                    <AspectRatioSelector
+                                        selectedAspectRatio={aspectRatio}
+                                        onSelectAspectRatio={setAspectRatio}
+                                    />
+                                </div>
+                                <div className="mb-6">
+                                    <label htmlFor="generation-prompt" className="block text-lg font-semibold mb-3 text-gray-300">
+                                        Optional: Guide the AI
+                                    </label>
+                                    <textarea
+                                        id="generation-prompt"
+                                        value={generationPrompt}
+                                        onChange={(e) => setGenerationPrompt(e.target.value)}
+                                        placeholder="e.g., 'on a wooden table', 'worn by a model outdoors at sunset', 'zoomed-in detail shot'"
+                                        className="w-full bg-base-300 border border-gray-600 rounded-lg px-3 py-2 text-base-content focus:outline-none focus:ring-2 focus:ring-brand-primary resize-y"
+                                        rows={3}
+                                        aria-describedby="generation-prompt-description"
+                                    />
+                                     <p id="generation-prompt-description" className="text-xs text-gray-500 mt-1">Add details to customize the scene, lighting, and style.</p>
+                                </div>
+                             </div>
                              <p className="text-gray-400 mb-6">Once you have a logo and a product, let our AI create your mockup!</p>
                              <button
                                 onClick={handleGenerateMockup}
